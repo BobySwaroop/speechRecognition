@@ -15,15 +15,14 @@ const Chatbot = () => {
       callback: () => setBotResponse("I wasn't talking."),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.2
-
     },
     {
-        command: ['eat', 'sleep', 'leave'],
-        callback: (command) => setBotResponse(`Best matching command: ${command}`),
-        isFuzzyMatch: true,
-        fuzzyMatchingThreshold: 0.2,
-        bestMatchOnly: true
-      },
+      command: ['eat', 'sleep', 'leave'],
+      callback: (command) => setBotResponse(`Best matching command: ${command}`),
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.2,
+      bestMatchOnly: true
+    },
     {
       command: 'Hello',
       callback: () => setBotResponse('Hi! My name is Chatbuddy. How can I assist you?')
@@ -38,7 +37,7 @@ const Chatbot = () => {
     },
     {
       command: 'what are you doing',
-      callback: () => setBotResponse('Currently i am working as a software developer')
+      callback: () => setBotResponse('Currently I am working as a software developer')
     },
     // Add more commands as needed
   ];
@@ -54,13 +53,18 @@ const Chatbot = () => {
       setUserQuery(transcript);
       handleUserQuery(transcript);
     }
-  }, [transcript]);
+  }, []);
 
   const handleUserQuery = (query) => {
-    const command = commands.find(cmd =>
-      query.toLowerCase().includes(cmd.command.toLowerCase()) ||
-      cmd.command.toLowerCase().includes(query.toLowerCase())
-    );
+    const command = commands.find(cmd => {
+      if (typeof cmd.command === 'string') {
+        return query.toLowerCase().includes(cmd.command.toLowerCase());
+      } else if (Array.isArray(cmd.command)) {
+        return cmd.command.some(cmdItem => query.toLowerCase().includes(cmdItem.toLowerCase()));
+      }
+      return false;
+    });
+  
     if (command) {
       command.callback();
     } else {
@@ -68,8 +72,6 @@ const Chatbot = () => {
     }
   };
   
-// fdffd
-
   useEffect(() => {
     if (botResponse) {
       speakMessage(botResponse);
@@ -78,7 +80,7 @@ const Chatbot = () => {
 
   const speakMessage = (text) => {
     const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = 'en-US';
+    speech.lang = 'en-IN';
     window.speechSynthesis.speak(speech);
   };
 
@@ -104,12 +106,12 @@ const Chatbot = () => {
         </div>
       </div>
 
-      <div>
-        <div style={{ float: 'left', marginRight: '10px' }}>
-          <p>Bot: {botResponse}</p> 
-        </div>
-        <div style={{ clear: 'both' }}>
+      <div style={{ overflow: 'hidden' }}>
+        <div style={{ float: 'right', textAlign: 'right', width: '50%' }}>
           <p>User: {userQuery}</p>
+        </div>
+        <div style={{ float: 'left', textAlign: 'left', width: '50%' }}>
+          <p>Bot: {botResponse}</p> 
         </div>
       </div>
     </div>
