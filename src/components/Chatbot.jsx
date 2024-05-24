@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 const Chatbot = () => {
   const [userQuery, setUserQuery] = useState('');
   const [botResponse, setBotResponse] = useState('');
+  const [transcribing, setTranscribing] = useState(true);
+  const [clearTranscriptOnListen, setClearTranscriptOnListen] = useState(true);
   
+  const toggleTranscribing = () => setTranscribing(!transcribing);
+  const toggleClearTranscriptOnListen = () => setClearTranscriptOnListen(!clearTranscriptOnListen);
+
   const commands = [
     {
       command: 'reset',
@@ -39,21 +44,37 @@ const Chatbot = () => {
       command: 'what are you doing',
       callback: () => setBotResponse('Currently I am working as a software developer')
     },
-    // Add more commands as needed
   ];
 
   const {
     transcript,
     resetTranscript,
     listening,
-  } = useSpeechRecognition({ commands });
+    interimTranscript,
+    finalTranscript,
+  } = useSpeechRecognition({ commands, transcribing, clearTranscriptOnListen });
 
   useEffect(() => {
-    if (transcript) {
+    if (listening && transcript) {
       setUserQuery(transcript);
       handleUserQuery(transcript);
     }
-  }, []);
+  }, [transcript, listening]);
+
+  useEffect(() => {
+    if (interimTranscript !== '') {
+      console.log('Got interim result:', interimTranscript)
+    }
+    if (finalTranscript !== '') {
+      console.log('Got final result:', finalTranscript)
+    }
+  }, [interimTranscript, finalTranscript]);
+
+  useEffect(() => {
+    if (botResponse) {
+      speakMessage(botResponse);
+    }
+  }, [botResponse]);
 
   const handleUserQuery = (query) => {
     const command = commands.find(cmd => {
@@ -72,12 +93,6 @@ const Chatbot = () => {
     }
   };
   
-  useEffect(() => {
-    if (botResponse) {
-      speakMessage(botResponse);
-    }
-  }, [botResponse]);
-
   const speakMessage = (text) => {
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = 'en-IN';
@@ -107,7 +122,7 @@ const Chatbot = () => {
       </div>
 
       <div style={{ overflow: 'hidden' }}>
-        <div style={{ float: 'right', textAlign: 'right', width: '50%' }}>
+        <div style={{ float: 'left', textAlign: 'left', width: '50%' }}>
           <p>User: {userQuery}</p>
         </div>
         <div style={{ float: 'left', textAlign: 'left', width: '50%' }}>
