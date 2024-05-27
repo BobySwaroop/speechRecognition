@@ -21,6 +21,7 @@ const Bot = () => {
       command: 'reset',
       callback: () => resetTranscript()
     },
+  
     {
       command: ['shut up', 'exit', 'stop', 'chup karo', 'band karo'],
       callback: () => addBotMessage("I don't talk with you"),
@@ -28,8 +29,15 @@ const Bot = () => {
       fuzzyMatchingThreshold: 0.2
     },
     {
-      command: ['hello', 'hi', 'how are you', 'hey'],
+      command: ['hello', 'hi', 'how are you', 'hey', 'hello bot', 'hii bot'],
       callback: () => addBotMessage('Hi! How can I assist you?'),
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.8,
+    },
+    {
+      command: ["what's your name", "apna naam batao", "naam kya hain tumhara"],
+      callback: () => addBotMessage('Hi! i am chatbuddy, how can i help you ?') ,
+
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.5,
     },
@@ -87,31 +95,71 @@ const Bot = () => {
       command: 'what are you doing',
       callback: () => addBotMessage('Currently I am working as a software developer.')
     },
+    {
+      command: 'open *',
+      callback: (websiteUrl) => {
+        const trim = websiteUrl.replace(/\s/g, '');
+        const urlToOpen = `https://${trim}.com`;
+        const newTab = window.open(urlToOpen, '_blank');
+        if (newTab) {
+          newTab.focus();
+          addBotMessage(`Opening ${urlToOpen}`);
+        } else {
+          addBotMessage('Popup blocker is preventing the website from opening. Please allow popups for this site.');
+        }
+      },
+      isFuzzyMatch: false // Disable fuzzy matching for this command
+    },
+    {
+      command: ['go back', 'back'],
+      callback: () => {
+        window.history.back();
+        addBotMessage('Navigating back');
+      },
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.5,
+    },
+    {
+      command: ['go forward', 'forward'],
+      callback: () => {
+        window.history.forward();
+        addBotMessage('Navigating forward');
+      },
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.5,
+    },
+ 
     // Add more commands as needed
   ];
 
   const {
     resetTranscript,
     listening,
-    transcript
+    transcript,
   } = useSpeechRecognition({ commands, interimResults: true, continuous: false  });
   useEffect(() => {
     if (transcript && !listening) {
       addUserMessage(transcript); 
       console.log(transcript);
+      setUserInput(transcript)
       handleQuery(transcript);  
+
       setUserInput(transcript);
     }
   }, [transcript]);
   
 
+
   useEffect(() => {
     if (listening) {
-      setUserInput('');
+      setUserInput(transcript);
+      console.log(transcript);
+      handleQuery(transcript)
     }
   }, [listening]);
 
   const handleQuery = (query) => {
+
     const command = commands.find(cmd => {
       if (typeof cmd.command === 'string') {
         return query.toLowerCase().includes(cmd.command.toLowerCase());
@@ -207,10 +255,16 @@ const Bot = () => {
     addUserMessage(transcript);
     
     handleQuery(transcript);
+
     
   };
-
+  
+  // when mike automaticaly on
+  // useEffect(() => {
+  //   SpeechRecognition.startListening({ continuous: true })
+  // }, []);
   useEffect(() => {
+   
     if (!listening && transcript) {
       handleVoiceInput(transcript);
       resetTranscript();
@@ -226,25 +280,25 @@ const Bot = () => {
       <div className="mb-4">
         <span className="font-bold">Listening:</span> {listening ? 'on' : 'off'}
         <div className="flex">
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold p-2 rounded mr-2" type="button" onClick={resetTranscript}>Reset</button>
-          <button type="button" onClick={listenContinuously}><img className="h-12 w-10" src={mic} alt="microphone" /></button>
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" type="button" onClick={SpeechRecognition.stopListening}>Stop</button>
+          <button className="p-2 mr-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={resetTranscript}>Reset</button>
+          <button type="button" onClick={listenContinuously}><img className="w-10 h-12" src={mic} alt="microphone" /></button>
+          <button className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={SpeechRecognition.stopListening}>Stop</button>
         </div>
       </div>
 
-      <div className="border-2 border-slate-400 w-1/2 h-96 overflow-y-auto bg-white rounded shadow-lg" style={{ scrollbarWidth: 'thin', scrollbarColor: '#888 #f1f1f1' }}>
+      <div className="w-1/2 overflow-y-auto bg-white border-2 rounded shadow-lg border-slate-400 h-96" style={{ scrollbarWidth: 'thin', scrollbarColor: '#888 #f1f1f1' }}>
         <div className="h-full p-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#888 #f1f1f1' }}>
           {messages.map((message, index) => (
             <div key={index} className={`flex ${message.sender === 'bot' ? 'justify-start' : 'justify-end'} mb-2`}>
               {message.sender === 'bot' && (
                 <div className="flex items-center">
-                  <img src='https://cdn-icons-png.freepik.com/512/8649/8649605.png' className="h-6 w-6 mr-2" />
-                  <p className="bg-gray-300 p-2 rounded-lg max-w-xs break-words">{message.text}</p>
+                  <img src='https://cdn-icons-png.freepik.com/512/8649/8649605.png' className="w-6 h-6 mr-2" />
+                  <p className="max-w-xs p-2 break-words bg-gray-300 rounded-lg">{message.text}</p>
                 </div>
               )}
               {message.sender === 'user' && (
                 <div className="flex items-center">
-                  <p className="bg-blue-500 text-white p-2 rounded-lg max-w-xs break-words">{message.text}</p>
+                  <p className="max-w-xs p-2 text-white break-words bg-blue-500 rounded-lg">{message.text}</p>
                 </div>
               )}
             </div>
@@ -257,12 +311,12 @@ const Bot = () => {
         <form onSubmit={handleSubmit} className="flex">
           <input
             type="text"
-            className="border-2 border-gray-400 rounded-l px-4 py-2 focus:outline-none"
+            className="px-4 py-2 border-2 border-gray-400 rounded-l focus:outline-none"
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             placeholder="Type your question..."
           />
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-r">Send</button>
+          <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded-r">Send</button>
         </form>
       </div>
     </div>

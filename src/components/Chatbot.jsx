@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import 'tailwindcss/tailwind.css';
 
 const Chatbot = () => {
+  const [messages, setMessages] = useState([]);
   const [userQuery, setUserQuery] = useState('');
-  const [botResponse, setBotResponse] = useState('');
   const [transcribing, setTranscribing] = useState(true);
   const [clearTranscriptOnListen, setClearTranscriptOnListen] = useState(true);
-  
+  const [finalTranscriptProcessed, setFinalTranscriptProcessed] = useState(false);
+  const [userSaidName, setUserSaidName] = useState(false);
+  const [userName, setUserName] = useState('');
+
   const toggleTranscribing = () => setTranscribing(!transcribing);
   const toggleClearTranscriptOnListen = () => setClearTranscriptOnListen(!clearTranscriptOnListen);
 
@@ -17,34 +21,89 @@ const Chatbot = () => {
     },
     {
       command: ['shut-up', 'exit', 'stop'],
-      callback: () => setBotResponse("I wasn't talking."),
+      callback: () => addMessage({ user: false, text: "I wasn't talking." }),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.2
     },
-    {
-      command: ['eat', 'sleep', 'leave'],
-      callback: (command) => setBotResponse(`Best matching command: ${command}`),
-      isFuzzyMatch: true,
-      fuzzyMatchingThreshold: 0.2,
-      bestMatchOnly: true
-    },
+   
     {
       command: 'Hello',
-      callback: () => setBotResponse('Hi! My name is Chatbuddy. How can I assist you?')
+      callback: () => addMessage({ user: false, text: 'Hi! My name is Chatbuddy. How can I assist you?' })
     },
     {
       command: 'what is react js',
-      callback: () => setBotResponse('React is a free and open-source front-end JavaScript library for building user interfaces based on components.')
+      callback: () => addMessage({ user: false, text: 'React is a free and open-source front-end JavaScript library for building user interfaces based on components.' })
     },
     {
       command: 'what is python',
-      callback: () => setBotResponse('Python is a high-level, general-purpose programming language. Python is dynamically typed and garbage-collected.')
+      callback: () => addMessage({ user: false, text: 'Python is a high-level, general-purpose programming language. Python is dynamically typed and garbage-collected.' })
     },
     {
       command: 'what are you doing',
-      callback: () => setBotResponse('Currently I am working as a software developer')
+      callback: () => addMessage({ user: false, text: 'Currently I am working as a software developer' })
+    },
+    {
+      command: 'open *',
+      callback: (websiteUrl) => {
+        const trim = websiteUrl.replace(/\s/g, '');
+        const urlToOpen = `https://${trim}.com`;
+        const newTab = window.open(urlToOpen, '_blank');
+        if (newTab) {
+          newTab.focus();
+          addMessage({ user: false, text: `Opening ${urlToOpen}` });
+        } else {
+          addMessage({ user: false, text: 'Popup blocker is preventing the website from opening. Please allow popups for this site.' });
+        }
+      },
+      isFuzzyMatch: false // Disable fuzzy matching for this command
+    },
+    {
+      command: ['go back', 'back'],
+      callback: () => {
+        window.history.back();
+        addMessage({ user: false, text: 'Navigating back' });
+      },
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.5,
+    },
+    {
+      command: ['go forward', 'forward'],
+      callback: () => {
+        window.history.forward();
+        addMessage({ user: false, text: 'Navigating forward' });
+      },
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.5,
+    },
+    {
+      command: '*name',
+      callback: (name) => {
+        if (name.toLowerCase().includes('my name is') || name.toLowerCase().includes('i am'))  {
+          // Extract the name from the input
+          const name = name
+            .toLowerCase()
+            .replace('my name is', '')
+            .replace('i am', '')
+            .trim();
+    
+          // Respond with a personalized message
+          setUserName(name);
+          addMessage({ user: false, text: `Nice to meet you, ${name}! How can I assist you today?` });
+          setUserSaidName(true);
+        } else {
+          
+        }
+  
+
+      },
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.5,
     },
   ];
+
+  useEffect(() => {
+    SpeechRecognition.startListening({ continuous: true })
+  }, []);
 
   const {
     transcript,
@@ -55,44 +114,70 @@ const Chatbot = () => {
   } = useSpeechRecognition({ commands, transcribing, clearTranscriptOnListen });
 
   useEffect(() => {
-    if (listening && transcript) {
-      setUserQuery(transcript);
-      handleUserQuery(transcript);
+    if (finalTranscript && !finalTranscriptProcessed) {
+      setUserQuery(finalTranscript);
+      handleUserQuery(finalTranscript);
+      setFinalTranscriptProcessed(true);
     }
-  }, [transcript, listening]);
+  }, [finalTranscript, finalTranscriptProcessed]);
 
   useEffect(() => {
     if (interimTranscript !== '') {
-      console.log('Got interim result:', interimTranscript)
+      console.log('Got interim result:', interimTranscript);
     }
     if (finalTranscript !== '') {
-      console.log('Got final result:', finalTranscript)
+      console.log('Got final result:', finalTranscript);
     }
   }, [interimTranscript, finalTranscript]);
 
   useEffect(() => {
-    if (botResponse) {
-      speakMessage(botResponse);
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (!lastMessage.user) {
+        speakMessage(lastMessage.text);
+      }
     }
-  }, [botResponse]);
+  }, [messages]);
 
   const handleUserQuery = (query) => {
-    const command = commands.find(cmd => {
-      if (typeof cmd.command === 'string') {
-        return query.toLowerCase().includes(cmd.command.toLowerCase());
-      } else if (Array.isArray(cmd.command)) {
-        return cmd.command.some(cmdItem => query.toLowerCase().includes(cmdItem.toLowerCase()));
-      }
-      return false;
-    });
-  
-    if (command) {
-      command.callback();
+    addMessage({ user: true, text: query });
+
+    // Check if the user input contains keywords related to introducing oneself
+    if (query.toLowerCase().includes('my name is') || query.toLowerCase().includes('i am'))  {
+      // Extract the name from the input
+      const name = query
+        .toLowerCase()
+        .replace('my name is', '')
+        .replace('i am', '')
+        .trim();
+
+      // Respond with a personalized message
+      setUserName(name);
+      addMessage({ user: false, text: `Nice to meet you, ${name}! How can I assist you today?` });
+      setUserSaidName(true);
+    } else if (!userSaidName && query.toLowerCase().includes('what is your name')) {
+      addMessage({ user: false, text: "My name is Chatbuddy. How can I assist you today?" });
     } else {
-      setBotResponse("I'm sorry, I didn't understand that.");
+      const command = commands.find(cmd => {
+        if (typeof cmd.command === 'string') {
+          return query.toLowerCase().includes(cmd.command.toLowerCase());
+        } else if (Array.isArray(cmd.command)) {
+          return cmd.command.some(cmdItem => query.toLowerCase().includes(cmdItem.toLowerCase()));
+        }
+        return false;
+      });
+
+      if (command) {
+        command.callback();
+      } else {
+        addMessage({ user: false, text: "I'm sorry, I didn't understand that." });
+      }
     }
+
+    resetTranscript();
+    setFinalTranscriptProcessed(false); // Reset the flag for the next input
   };
-  
+
   const speakMessage = (text) => {
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = 'en-IN';
@@ -105,29 +190,71 @@ const Chatbot = () => {
       language: 'en-IN',
     });
   };
+if(listening){
+  console.log(transcript);
+  // addMessage(userQuery);
+}
+  const handleTypedQuery = () => {
+    handleUserQuery(userQuery);
+    setUserQuery('');
+  };
+
+  const addMessage = (message) => {
+    setMessages((prevMessages) => [...prevMessages, message]);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleTypedQuery();
+    }
+  };
 
   if (!SpeechRecognition.browserSupportsSpeechRecognition()) {
     return <div>Your browser does not support speech recognition software. Please try using a different browser.</div>;
   }
 
   return (
-    <div>
-      <div>
-        <span>Listening: {listening ? 'on' : 'off'}</span>
-        <div>
-          <button type="button" onClick={resetTranscript}>Reset</button>
-          <button type="button" onClick={listenContinuously}>Listen</button>
-          <button type="button" onClick={SpeechRecognition.stopListening}>Stop</button>
-        </div>
+    <div className="flex flex-col h-screen">
+      <div className="flex-grow p-4 overflow-y-scroll bg-gray-100">
+        {messages.map((msg, index) => (
+          <div key={index} className={`flex ${msg.user ? 'justify-end' : 'justify-start'} mb-2`}>
+            <div className={`p-2 rounded-lg ${msg.user ? 'bg-blue-500 text-white' : 'bg-gray-300'}`}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div style={{ overflow: 'hidden' }}>
-        <div style={{ float: 'left', textAlign: 'left', width: '50%' }}>
-          <p>User: {userQuery}</p>
-        </div>
-        <div style={{ float: 'left', textAlign: 'left', width: '50%' }}>
-          <p>Bot: {botResponse}</p> 
-        </div>
+      <div className="flex items-center p-4 bg-white border-t">
+        <input
+          type="text"
+          value={userQuery}
+          onChange={(e) => setUserQuery(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Type here..."
+          className="flex-grow p-2 mr-2 border rounded-lg"
+        />
+        <button
+          type="button"
+          onClick={handleTypedQuery}
+          className="p-2 text-white bg-blue-500 rounded-lg"
+        >
+          Send
+        </button>
+        <button
+          type="button"
+          onClick={listenContinuously}
+          className="p-2 ml-2 text-white bg-green-500 rounded-lg"
+        >
+          Listen
+        </button>
+        <button
+          type="button"
+          onClick={SpeechRecognition.stopListening}
+          className="p-2 ml-2 text-white bg-red-500 rounded-lg"
+        >
+          Stop
+        </button>
       </div>
     </div>
   );
