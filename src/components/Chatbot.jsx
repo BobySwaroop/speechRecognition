@@ -25,7 +25,18 @@ const Chatbot = () => {
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.2
     },
-   
+    {
+      command: "change colour to *",
+      callback: (color) => {
+        document.body.style.background = color;
+      },
+    },
+    {
+      command: "reset  colour",
+      callback: () => {
+        document.body.style.background = `rgba(0, 0, 0, 0.8)`;
+      },
+    },
     {
       command: 'Hello',
       callback: () => addMessage({ user: false, text: 'Hi! My name is Chatbuddy. How can I assist you?' })
@@ -140,8 +151,9 @@ const Chatbot = () => {
   }, [messages]);
 
   const handleUserQuery = (query) => {
+    // Add the user's query to the message history
     addMessage({ user: true, text: query });
-
+  
     // Check if the user input contains keywords related to introducing oneself
     if (query.toLowerCase().includes('my name is') || query.toLowerCase().includes('i am'))  {
       // Extract the name from the input
@@ -150,14 +162,19 @@ const Chatbot = () => {
         .replace('my name is', '')
         .replace('i am', '')
         .trim();
-
+  
       // Respond with a personalized message
       setUserName(name);
       addMessage({ user: false, text: `Nice to meet you, ${name}! How can I assist you today?` });
       setUserSaidName(true);
     } else if (!userSaidName && query.toLowerCase().includes('what is your name')) {
+      // If the user hasn't introduced themselves and asks for the bot's name, respond with the bot's name
       addMessage({ user: false, text: "My name is Chatbuddy. How can I assist you today?" });
+    } else if (query.toLowerCase() === 'hello') {
+      // If the user greets the bot, respond with a greeting and ask for the user's name
+      addMessage({ user: false, text: 'Hi! My name is Chatbuddy. What is your name?' });
     } else {
+      // If none of the special conditions are met, check for other commands in the commands array
       const command = commands.find(cmd => {
         if (typeof cmd.command === 'string') {
           return query.toLowerCase().includes(cmd.command.toLowerCase());
@@ -166,17 +183,22 @@ const Chatbot = () => {
         }
         return false;
       });
-
+  
+      // If a command is found, execute its callback function
       if (command) {
         command.callback();
       } else {
+        // If no command is found, respond with a default message
         addMessage({ user: false, text: "I'm sorry, I didn't understand that." });
       }
     }
-
+  
+    // Reset the transcript and flag for the next input
     resetTranscript();
-    setFinalTranscriptProcessed(false); // Reset the flag for the next input
+    setFinalTranscriptProcessed(false);
   };
+  ;
+  
 
   const speakMessage = (text) => {
     const speech = new SpeechSynthesisUtterance(text);

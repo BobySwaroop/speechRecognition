@@ -7,6 +7,8 @@ const Bot = () => {
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState([{ sender: 'bot', text: "Hello! How can I assist you today?" }]);
   const messagesEndRef = useRef(null);
+  const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -29,6 +31,18 @@ const Bot = () => {
       fuzzyMatchingThreshold: 0.2
     },
     {
+      command: "change colour to *",
+      callback: (color) => {
+        document.body.style.background = color;
+      },
+    },
+    {
+      command: "reset  colour",
+      callback: () => {
+        document.body.style.background = `rgba(0, 0, 0, 0.8)`;
+      },
+    },
+    {
       command: ['hello', 'hi', 'how are you', 'hey', 'hello bot', 'hii bot'],
       callback: () => addBotMessage('Hi! How can I assist you?'),
       isFuzzyMatch: true,
@@ -37,7 +51,12 @@ const Bot = () => {
     {
       command: ["what's your name", "apna naam batao", "naam kya hain tumhara"],
       callback: () => addBotMessage('Hi! i am chatbuddy, how can i help you ?') ,
-
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.5,
+    },
+    {
+      command: ["how are you", 'kaise ho'],
+      callback: () => addBotMessage('I am good what about you ?') ,
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.5,
     },
@@ -92,7 +111,7 @@ const Bot = () => {
       fuzzyMatchingThreshold: 0.5,
     },
     {
-      command: 'what are you doing',
+      command: ['what are you doing', 'kya kar rahe ho'],
       callback: () => addBotMessage('Currently I am working as a software developer.')
     },
     {
@@ -132,34 +151,21 @@ const Bot = () => {
     // Add more commands as needed
   ];
 
-  const {
-    resetTranscript,
-    listening,
-    transcript,
-  } = useSpeechRecognition({ commands, interimResults: true, continuous: false  });
-  useEffect(() => {
-    if (transcript && !listening) {
-      addUserMessage(transcript); 
-      console.log(transcript);
-      setUserInput(transcript)
-      handleQuery(transcript);  
-
-      setUserInput(transcript);
-    }
-  }, [transcript]);
-  
-
+  const { resetTranscript, listening, transcript, finalTranscript } = useSpeechRecognition({ commands, interimResults: true, continuous: false });
 
   useEffect(() => {
-    if (listening) {
+    if (listening && finalTranscript) {
       setUserInput(transcript);
-      console.log(transcript);
-      handleQuery(transcript)
+      resetTranscript();
+      setSubmitting(true); // Set submitting state to true when user stops speaking
+      setTimeout(() => {
+        console.log('hh')
+        handleSubmit(); // Automatically submit the form after 1 seconds of user stopping speech
+      }, 1000);
     }
-  }, [listening]);
+  }, [listening, finalTranscript, resetTranscript]);
 
   const handleQuery = (query) => {
-
     const command = commands.find(cmd => {
       if (typeof cmd.command === 'string') {
         return query.toLowerCase().includes(cmd.command.toLowerCase());
@@ -171,54 +177,9 @@ const Bot = () => {
     if (command) {
       command.callback(query);
     } else {
-      addBotMessage("Sorry, I am not understand that");
+      addBotMessage("Sorry, I don't understand that.");
     }
   };
-  // const fuzzyMatch = (query, command, threshold) => {
-  //   const queryWords = query.toLowerCase().split(' ');
-  //   const commandWords = command.toLowerCase().split(' ');
-  
-  //   let matches = 0;
-  //   queryWords.forEach(queryWord => {
-  //     commandWords.forEach(commandWord => {
-  //       if (commandWord.includes(queryWord)) {
-  //         matches++;
-  //       }
-  //     });
-  //   });
-  
-  //   const matchPercentage = matches / queryWords.length;
-  //   return matchPercentage >= threshold;
-  // };
-  
-  // const handleQuery = (query) => {
-  //   const bestMatch = { rating: 0, command: null };
-  
-  //   commands.forEach(cmd => {
-  //     let match = false;
-  //     if (typeof cmd.command === 'string') {
-  //       match = fuzzyMatch(query, cmd.command, cmd.fuzzyMatchingThreshold);
-  //     } else if (Array.isArray(cmd.command)) {
-  //       cmd.command.forEach(cmdItem => {
-  //         if (fuzzyMatch(query, cmdItem, cmd.fuzzyMatchingThreshold)) {
-  //           match = true;
-  //         }
-  //       });
-  //     }
-  
-  //     if (match && cmd.fuzzyMatchingThreshold >= bestMatch.rating) {
-  //       bestMatch.rating = cmd.fuzzyMatchingThreshold;
-  //       bestMatch.command = cmd;
-  //     }
-  //   });
-  
-  //   if (bestMatch.command) {
-  //     bestMatch.command.callback(query);
-  //   } else {
-  //     addBotMessage("Sorry, I don't know the answer to that question.");
-  //   }
-  // };
-  
 
   const addBotMessage = (message) => {
     setMessages(prev => [...prev, { sender: 'bot', text: message }]);
@@ -243,28 +204,20 @@ const Bot = () => {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (userInput.trim() !== '') {
       addUserMessage(userInput);
       handleQuery(userInput);
       setUserInput('');
+      resetTranscript(); // Clear the transcript after handling the query
     }
   };
 
   const handleVoiceInput = (transcript) => {
     addUserMessage(transcript);
-    
-    handleQuery(transcript);
-
-    
   };
-  
-  // when mike automaticaly on
-  // useEffect(() => {
-  //   SpeechRecognition.startListening({ continuous: true })
-  // }, []);
+
   useEffect(() => {
-   
     if (!listening && transcript) {
       handleVoiceInput(transcript);
       resetTranscript();
@@ -292,7 +245,7 @@ const Bot = () => {
             <div key={index} className={`flex ${message.sender === 'bot' ? 'justify-start' : 'justify-end'} mb-2`}>
               {message.sender === 'bot' && (
                 <div className="flex items-center">
-                  <img src='https://cdn-icons-png.freepik.com/512/8649/8649605.png' className="w-6 h-6 mr-2" />
+                  <img src='https://cdn-icons-png.freepik.com/512/8649/8649605.png' className="w-6 h-6 mr-2" alt="bot" />
                   <p className="max-w-xs p-2 break-words bg-gray-300 rounded-lg">{message.text}</p>
                 </div>
               )}
@@ -310,11 +263,13 @@ const Bot = () => {
       <div className="mt-4">
         <form onSubmit={handleSubmit} className="flex">
           <input
+            ref={inputRef}
             type="text"
             className="px-4 py-2 border-2 border-gray-400 rounded-l focus:outline-none"
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             placeholder="Type your question..."
+  
           />
           <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded-r">Send</button>
         </form>
