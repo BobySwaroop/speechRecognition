@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import 'tailwindcss/tailwind.css';
 
+
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [userQuery, setUserQuery] = useState('');
@@ -237,6 +238,7 @@ if(listening){
 
   return (
     <div className="flex flex-col h-screen">
+     
       <div className="flex-grow p-4 overflow-y-scroll bg-gray-100">
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.user ? 'justify-end' : 'justify-start'} mb-2`}>
@@ -278,7 +280,9 @@ if(listening){
           Stop
         </button>
       </div>
+    
     </div>
+  
   );
 };
 

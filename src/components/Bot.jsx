@@ -2,12 +2,14 @@ import React, { useEffect, useState, useRef } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import mic from "../assets/7123011_google_mic_icon.svg";
 import 'tailwindcss/tailwind.css';
+import Avatar from './chatbot/Avatar';
 
 const Bot = () => {
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState([{ sender: 'bot', text: "Hello! How can I assist you today?" }]);
   const messagesEndRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setloading] = useState(false);
   const inputRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -46,7 +48,7 @@ const Bot = () => {
       command: ['hello', 'hi', 'how are you', 'hey', 'hello bot', 'hii bot'],
       callback: () => addBotMessage('Hi! How can I assist you?'),
       isFuzzyMatch: true,
-      fuzzyMatchingThreshold: 0.8,
+      fuzzyMatchingThreshold: 0.4,
     },
     {
       command: ["what's your name", "apna naam batao", "naam kya hain tumhara"],
@@ -87,7 +89,7 @@ const Bot = () => {
       fuzzyMatchingThreshold: 0.8,
     },
     {
-      command: ['what is Artifical intelligence', 'ai'],
+      command: ['what is Artifical intelligence', 'ai', 'artifical intelligence'],
       callback: () => addBotMessage('Artificial intelligence, or AI, is technology that enables computers and machines to simulate human intelligence and problem-solving capabilities.'),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.5,
@@ -147,6 +149,22 @@ const Bot = () => {
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.5,
     },
+    {
+      command: ['refresh', 'reload'],
+      callback : () => {
+        window.location.reload();
+      },
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.7,
+    },
+    {
+      command : ['open mic', 'mike open', 'open mike'],
+      callback : () => {
+        listenContinuously();
+      },
+      isFuzzyMatch: true,
+      fuzzyMatchingThreshold: 0.7,
+    }
  
     // Add more commands as needed
   ];
@@ -156,12 +174,17 @@ const Bot = () => {
   useEffect(() => {
     if (listening && finalTranscript) {
       setUserInput(transcript);
+
+      // addUserMessage(transcript);
+      // handleQuery(transcript);
+      addUserMessage(transcript);
+      // handleQuery(userInput);
+      setUserInput('');
       resetTranscript();
-      setSubmitting(true); // Set submitting state to true when user stops speaking
-      setTimeout(() => {
-        console.log('hh')
-        handleSubmit(); // Automatically submit the form after 1 seconds of user stopping speech
-      }, 1000);
+        
+  
+      // }, 1000);
+      
     }
   }, [listening, finalTranscript, resetTranscript]);
 
@@ -175,6 +198,7 @@ const Bot = () => {
       return false;
     });
     if (command) {
+      setSubmitting(true); 
       command.callback(query);
     } else {
       addBotMessage("Sorry, I don't understand that.");
@@ -182,12 +206,20 @@ const Bot = () => {
   };
 
   const addBotMessage = (message) => {
-    setMessages(prev => [...prev, { sender: 'bot', text: message }]);
-    speakMessage(message);
+
+    if(submitting){
+      setTimeout(() => {
+        setMessages(prev => [...prev, { sender: 'bot', text: message }]);
+        speakMessage(message);
+      },1000);
+
+    }
+
   };
 
   const addUserMessage = (message) => {
-    setMessages(prev => [...prev, { sender: 'user', text: message }]);
+      setMessages(prev => [...prev, { sender: 'user', text: message }]);
+      setSubmitting(true);
   };
 
   const speakMessage = (text) => {
@@ -201,6 +233,7 @@ const Bot = () => {
       continuous: true,
       language: 'en-IN',
     });
+    
   };
 
   const handleSubmit = (e) => {
@@ -229,50 +262,56 @@ const Bot = () => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-200">
-      <div className="mb-4">
-        <span className="font-bold">Listening:</span> {listening ? 'on' : 'off'}
-        <div className="flex">
-          <button className="p-2 mr-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={resetTranscript}>Reset</button>
-          <button type="button" onClick={listenContinuously}><img className="w-10 h-12" src={mic} alt="microphone" /></button>
-          <button className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={SpeechRecognition.stopListening}>Stop</button>
+    <div className="flex items-center justify-center h-screen bg-gray-200">
+    
+
+      <div className="flex flex-col items-center justify-center w-3/4 h-full">
+        <div className="mb-4">
+          <span className="font-bold">Listening:</span> {listening ? 'on' : 'off'}
+          <div className="flex">
+            <button className="p-2 mr-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={resetTranscript}>Reset</button>
+            <button type="button" onClick={listenContinuously}><img className="w-10 h-12" src={mic} alt="microphone" /></button>
+            <button className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={SpeechRecognition.stopListening}>Stop</button>
+          </div>
+        </div>
+
+        <div className="w-1/2 overflow-y-auto bg-white border-2 rounded shadow-lg border-slate-400 h-96" style={{ scrollbarWidth: 'thin', scrollbarColor: '#888 #f1f1f1' }}>
+          <div className="h-full p-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#888 #f1f1f1' }}>
+            {messages.map((message, index) => (
+              <div key={index} className={`flex ${message.sender === 'bot' ? 'justify-start' : 'justify-end'} mb-2`}>
+                {message.sender === 'bot' && (
+                  <div className="flex items-center">
+                    <img src='https://cdn-icons-png.freepik.com/512/8649/8649605.png' className="w-6 h-6 mr-2" alt="bot" />
+                    <p className="max-w-xs p-2 break-words bg-gray-300 rounded-lg">{message.text}</p>
+                  </div>
+                )}
+                {message.sender === 'user' && (
+                  <div className="flex items-center">
+                    <p className="max-w-xs p-2 text-white break-words bg-blue-500 rounded-lg">{message.text}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+    
+        <div className="mt-4">
+          <form onSubmit={handleSubmit} className="flex">
+            <input
+              ref={inputRef}
+              type="text"
+              className="px-4 py-2 border-2 border-gray-400 rounded-l focus:outline-none"
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder="Type your question..."
+            />
+            <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded-r">Send</button>
+          </form>
         </div>
       </div>
-
-      <div className="w-1/2 overflow-y-auto bg-white border-2 rounded shadow-lg border-slate-400 h-96" style={{ scrollbarWidth: 'thin', scrollbarColor: '#888 #f1f1f1' }}>
-        <div className="h-full p-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#888 #f1f1f1' }}>
-          {messages.map((message, index) => (
-            <div key={index} className={`flex ${message.sender === 'bot' ? 'justify-start' : 'justify-end'} mb-2`}>
-              {message.sender === 'bot' && (
-                <div className="flex items-center">
-                  <img src='https://cdn-icons-png.freepik.com/512/8649/8649605.png' className="w-6 h-6 mr-2" alt="bot" />
-                  <p className="max-w-xs p-2 break-words bg-gray-300 rounded-lg">{message.text}</p>
-                </div>
-              )}
-              {message.sender === 'user' && (
-                <div className="flex items-center">
-                  <p className="max-w-xs p-2 text-white break-words bg-blue-500 rounded-lg">{message.text}</p>
-                </div>
-              )}
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <form onSubmit={handleSubmit} className="flex">
-          <input
-            ref={inputRef}
-            type="text"
-            className="px-4 py-2 border-2 border-gray-400 rounded-l focus:outline-none"
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            placeholder="Type your question..."
-  
-          />
-          <button type="submit" className="px-4 py-2 text-white bg-blue-600 rounded-r">Send</button>
-        </form>
+      <div className="flex flex-col items-center w-1/4">
+        <Avatar />
       </div>
     </div>
   );

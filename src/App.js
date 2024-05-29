@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Chatbot from "./components/Chatbot";
 import Bot from "./components/Bot";
 import Chatkit from "./components/Chatkit";
+import Avatar from "./components/chatbot/Avatar";
 
 function App() {
   return (
@@ -12,6 +13,8 @@ function App() {
           <Route path="/" element={<Bot />} />
           <Route path="/chatbot" element={<Chatbot />} />
           <Route path="/kit" element={<Chatkit />} />
+          <Route path="/avtar" element={<Avatar />} />
+
 
         </Routes>
       </Router>
