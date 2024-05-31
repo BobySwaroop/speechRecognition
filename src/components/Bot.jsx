@@ -9,7 +9,7 @@ const Bot = () => {
   const [messages, setMessages] = useState([{ sender: 'bot', text: "Hello! How can I assist you today?" }]);
   const messagesEndRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
-  const [loading, setloading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -25,7 +25,6 @@ const Bot = () => {
       command: 'reset',
       callback: () => resetTranscript()
     },
-  
     {
       command: ['shut up', 'exit', 'stop', 'chup karo', 'band karo'],
       callback: () => addBotMessage("I don't talk with you"),
@@ -39,7 +38,7 @@ const Bot = () => {
       },
     },
     {
-      command: "reset  colour",
+      command: "reset colour",
       callback: () => {
         document.body.style.background = `rgba(0, 0, 0, 0.8)`;
       },
@@ -52,13 +51,13 @@ const Bot = () => {
     },
     {
       command: ["what's your name", "apna naam batao", "naam kya hain tumhara"],
-      callback: () => addBotMessage('Hi! i am chatbuddy, how can i help you ?') ,
+      callback: () => addBotMessage('Hi! I am chatbuddy, how can I help you?'),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.5,
     },
     {
       command: ["how are you", 'kaise ho'],
-      callback: () => addBotMessage('I am good what about you ?') ,
+      callback: () => addBotMessage('I am good, what about you?'),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.5,
     },
@@ -78,7 +77,7 @@ const Bot = () => {
     },
     {
       command: ['machine learning', 'ml', 'what is ml'],
-      callback: () => addBotMessage('Machine learning (ML) is a branch of AI and computer science that focuses on the using data and algorithms to enable AI to imitate the way that humans'),
+      callback: () => addBotMessage('Machine learning (ML) is a branch of AI and computer science that focuses on using data and algorithms to enable AI to imitate the way that humans'),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.7,
     },
@@ -89,7 +88,7 @@ const Bot = () => {
       fuzzyMatchingThreshold: 0.8,
     },
     {
-      command: ['what is Artifical intelligence', 'ai', 'artifical intelligence'],
+      command: ['what is Artificial intelligence', 'ai', 'artificial intelligence'],
       callback: () => addBotMessage('Artificial intelligence, or AI, is technology that enables computers and machines to simulate human intelligence and problem-solving capabilities.'),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.5,
@@ -108,13 +107,13 @@ const Bot = () => {
     },
     {
       command: 'google',
-      callback: () => addBotMessage('Oh Hii, nice to talk , you how can help you?'),
+      callback: () => addBotMessage('Oh Hii, nice to talk to you. How can I help you?'),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.5,
     },
     {
       command: ['what are you doing', 'kya kar rahe ho'],
-      callback: () => addBotMessage('Currently I am working as a software developer.')
+      callback: () => addBotMessage('Currently, I am working as a software developer.')
     },
     {
       command: 'open *',
@@ -151,21 +150,21 @@ const Bot = () => {
     },
     {
       command: ['refresh', 'reload'],
-      callback : () => {
+      callback: () => {
         window.location.reload();
       },
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.7,
     },
     {
-      command : ['open mic', 'mike open', 'open mike'],
-      callback : () => {
+      command: ['open mic', 'mike open', 'open mike'],
+      callback: () => {
         listenContinuously();
       },
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.7,
     }
- 
+
     // Add more commands as needed
   ];
 
@@ -174,17 +173,9 @@ const Bot = () => {
   useEffect(() => {
     if (listening && finalTranscript) {
       setUserInput(transcript);
-
-      // addUserMessage(transcript);
-      // handleQuery(transcript);
       addUserMessage(transcript);
-      // handleQuery(userInput);
       setUserInput('');
       resetTranscript();
-        
-  
-      // }, 1000);
-      
     }
   }, [listening, finalTranscript, resetTranscript]);
 
@@ -198,7 +189,7 @@ const Bot = () => {
       return false;
     });
     if (command) {
-      setSubmitting(true); 
+      setSubmitting(true);
       command.callback(query);
     } else {
       addBotMessage("Sorry, I don't understand that.");
@@ -206,20 +197,20 @@ const Bot = () => {
   };
 
   const addBotMessage = (message) => {
-
-    if(submitting){
+    // if (submitting) {
+      setLoading(true); // Set loading to true when bot is about to respond
       setTimeout(() => {
         setMessages(prev => [...prev, { sender: 'bot', text: message }]);
         speakMessage(message);
-      },1000);
-
-    }
-
+        setSubmitting(false);
+        setLoading(false); // Set loading to false after bot has responded
+      }, 1000);
+    // }
   };
 
   const addUserMessage = (message) => {
-      setMessages(prev => [...prev, { sender: 'user', text: message }]);
-      setSubmitting(true);
+    setMessages(prev => [...prev, { sender: 'user', text: message }]);
+    setSubmitting(true);
   };
 
   const speakMessage = (text) => {
@@ -233,7 +224,6 @@ const Bot = () => {
       continuous: true,
       language: 'en-IN',
     });
-    
   };
 
   const handleSubmit = (e) => {
@@ -263,8 +253,6 @@ const Bot = () => {
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-200">
-    
-
       <div className="flex flex-col items-center justify-center w-3/4 h-full">
         <div className="mb-4">
           <span className="font-bold">Listening:</span> {listening ? 'on' : 'off'}
@@ -295,7 +283,7 @@ const Bot = () => {
             <div ref={messagesEndRef} />
           </div>
         </div>
-    
+
         <div className="mt-4">
           <form onSubmit={handleSubmit} className="flex">
             <input
@@ -311,7 +299,7 @@ const Bot = () => {
         </div>
       </div>
       <div className="flex flex-col items-center w-1/4">
-        <Avatar />
+        <Avatar start={loading} />
       </div>
     </div>
   );

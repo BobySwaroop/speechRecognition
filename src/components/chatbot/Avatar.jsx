@@ -1,59 +1,38 @@
-import React, { Suspense, useRef, useEffect } from 'react';
+import React, { Suspense, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
 
 // Animated model component
-const AnimatedModel = () => {
-  const animatedGLB = "./animated.glb"; // Path to animated GLB file
+const AnimatedModel = ({ start }) => {
+  const animatedGLB = "/model.glb"; // Path to animated GLB file
 
-  const AnimatedGLBModel = () => {
-    const group = useRef();
-    const { scene, nodes, materials, animations } = useGLTF(animatedGLB);
-    const { actions } = useAnimations(animations, group);
-  
-    useEffect(() => {
-      if (actions && actions["Armature|mixamo.com|Layer0"]) {
-        actions["Armature|mixamo.com|Layer0"].play();
-      }
-    }, [actions]);
-  
-    return (
-      <group ref={group} dispose={null}>
-        <primitive object={scene} scale={1.5} />
-        {/* <primitive object={nodes.Hips} /> */}
-        {/* <skinnedMesh */}
-          {/* geometry={nodes.Wolf3D_Body.geometry} */}
-          {/* material={materials.Wolf3D_Body} */}
-          {/* skeleton={nodes.Wolf3D_Body.skeleton} */}
-        {/* /> */}
-        {/* Add other skinnedMesh components here */}
-      </group>
-    );
-  };
+  const group = useRef();
+  const { scene, animations } = useGLTF(animatedGLB);
+  const { actions } = useAnimations(animations, group);
+
+  if (start && actions && actions["Armature.001|mixamo.com|Layer0"]) {
+    actions["Armature.001|mixamo.com|Layer0"].play();
+    console.log('Animation started');
+  }
 
   return (
-    <AnimatedGLBModel />
+    <group ref={group} dispose={null}>
+      <primitive object={scene} scale={1.5} />
+    </group>
   );
 };
 
 // Avatar component
-const Avatar = () => {
-  const avatarUrl = 'https://models.readyplayer.me/6656f66bd9e6c10e37f4f2e2.glb'; // Path to avatar GLB file
-
-  const GLBAvatar = () => {
-    const { scene } = useGLTF(avatarUrl);
-    return <primitive object={scene} scale={1.5} />;
-  };
+const Avatar = ({ start }) => {
 
   return (
-    <div className="h-screen flex justify-center items-center">
+    <div className="flex items-center justify-center h-screen">
       <Canvas>
         <ambientLight intensity={2.0} />
         <spotLight position={[10, 75, 10]} angle={1.15} penumbra={2} />
         <pointLight position={[-10, -20, 80]} />
         <Suspense fallback={null}>
-          <GLBAvatar />
-          <AnimatedModel />
+          <AnimatedModel start={start} />
         </Suspense>
         <OrbitControls />
       </Canvas>
