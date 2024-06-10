@@ -3,12 +3,14 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import mic from "../assets/7123011_google_mic_icon.svg";
 import 'tailwindcss/tailwind.css';
 import Avatar from './chatbot/Avatar';
+import { Mic } from '@material-ui/icons';
 
 const Bot = () => {
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState([{ sender: 'bot', text: "Hello! How can I assist you today?" }]);
   const messagesEndRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
@@ -179,6 +181,7 @@ const Bot = () => {
     }
   }, [listening, finalTranscript, resetTranscript]);
 
+
   const handleQuery = (query) => {
     const command = commands.find(cmd => {
       if (typeof cmd.command === 'string') {
@@ -224,6 +227,7 @@ const Bot = () => {
       continuous: true,
       language: 'en-IN',
     });
+    setIsListening(!isListening)
   };
 
   const handleSubmit = (e) => {
@@ -257,9 +261,40 @@ const Bot = () => {
         <div className="mb-4">
           <span className="font-bold">Listening:</span> {listening ? 'on' : 'off'}
           <div className="flex">
-            <button className="p-2 mr-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={resetTranscript}>Reset</button>
-            <button type="button" onClick={listenContinuously}><img className="w-10 h-12" src={mic} alt="microphone" /></button>
+            <button className="p-2 mr-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={resetTranscript}>Reset  <i class="fa-thin fa-microphone"></i></button>
+            <div class="flex justify-center items-center ms-4">
+    <div class="relative inline-flex">
+        <div class="w-10 h-12 bg-blue-300 rounded-full">
+        <button type="button" onClick={listenContinuously}><img className="w-10 h-12" src={mic} alt="microphone" /></button>
+           </div>
+           {isListening && <>
+            <div class="w-10 h-12 bg-blue-400 rounded-full absolute top-0 left-0 animate-ping"></div>
+        <div class="w-10 h-12 bg-blue-400 rounded-full absolute top-0 left-0 animate-pulse"></div>
+           </>
+            
+           }
+    
+    </div>
+</div>
             <button className="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700" type="button" onClick={SpeechRecognition.stopListening}>Stop</button>
+
+          </div>
+          <div>
+          <button
+        type="button"
+        className={`relative inline-flex justify-center items-center w-10 h-8 
+                    bg-teal-400 text-white text-4xl border-none rounded-full 
+                    cursor-pointer transition-colors duration-200 
+                    ${isListening ? 'bg-red-600' : ''}`}
+        onClick={() => setIsListening(!isListening)}
+      >
+       <Mic />
+        <div
+          className={`absolute inset-0 rounded-full bg-red-400 
+                      ${isListening ? 'animate-listening' : ''}`}
+          style={{ zIndex: -1 }}
+        ></div>
+      </button>
           </div>
         </div>
 

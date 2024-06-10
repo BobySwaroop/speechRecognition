@@ -5,8 +5,9 @@ import Bot from "./components/Bot";
 import Chatkit from "./components/Chatkit";
 import Avatar from "./components/chatbot/Avatar";
 import Ai from "./components/chatbot/Ai";
+import ModelRender from "./components/Avtar/ModelRender";
 
-function App() {
+function App() {  
   return (
     <div className="App">
       <Router>
@@ -16,13 +17,11 @@ function App() {
           <Route path="/kit" element={<Chatkit />} />
           <Route path="/avtar" element={<Avatar />} />
           <Route path="/ai" element={<Ai />} />
-
-
-
+          <Route path="/model" element={<ModelRender />} />
         </Routes>
       </Router>
     </div>
   );
 }
-
+// bbb
 export default App;
