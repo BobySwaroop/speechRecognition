@@ -12,6 +12,7 @@ const Bot = () => {
   const [submitting, setSubmitting] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [botMsg, getbotMsg] = useState("");
   const inputRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -204,7 +205,8 @@ const Bot = () => {
       setLoading(true); // Set loading to true when bot is about to respond
       setTimeout(() => {
         setMessages(prev => [...prev, { sender: 'bot', text: message }]);
-        speakMessage(message);
+        // speakMessage(message);
+        getbotMsg(message);
         setSubmitting(false);
         setLoading(false); // Set loading to false after bot has responded
       }, 1000);
@@ -216,11 +218,11 @@ const Bot = () => {
     setSubmitting(true);
   };
 
-  const speakMessage = (text) => {
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = 'en-IN';
-    window.speechSynthesis.speak(speech);
-  };
+  // const speakMessage = (text) => {
+  //   const speech = new SpeechSynthesisUtterance(text);
+  //   speech.lang = 'en-IN';
+  //   window.speechSynthesis.speak(speech);
+  // };
 
   const listenContinuously = () => {
     SpeechRecognition.startListening({
@@ -334,7 +336,7 @@ const Bot = () => {
         </div>
       </div>
       <div className="flex flex-col items-center w-1/4">
-        <Avatar start={loading} />
+        <Avatar start={loading} text={botMsg} />
       </div>
     </div>
   );

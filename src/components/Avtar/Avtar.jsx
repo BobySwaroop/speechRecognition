@@ -1,22 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useGLTF } from "@react-three/drei";
+import { useAnimations, useGLTF } from "@react-three/drei";
 
 const Avtar = ({ text, start, end, scale, position }) => {
-  const { scene, nodes } = useGLTF("/modelavtar.glb");
+  const { scene, nodes, animations } = useGLTF("/modelavtar.glb");
   const group = useRef();
   const [isAnimating, setIsAnimating] = useState(false);
 
+  const action = useAnimations(animations, group);
+  console.log(action);
 
-  useEffect(() => {
-    if (end) {
-      console.log('animation stopped!');
-      const headMesh = nodes.Wolf3D_Avatar;
-      headMesh.morphTargetInfluences.fill(0);
-      
-  
-    }
-  }, [end, nodes]);
-  
+
+    
 
   useEffect(() => {
     const visemeMapping = {
@@ -40,21 +34,36 @@ const Avtar = ({ text, start, end, scale, position }) => {
       // Add other eye expressions if needed
     };
 
+
     const phonemeToViseme = {
       "p": "viseme_PP",
+      "b": "viseme_PP",
+      "m": "viseme_PP",
       "f": "viseme_FF",
+      "v": "viseme_FF",
       "th": "viseme_TH",
+      "dh": "viseme_TH",
+      "t": "viseme_DD",
       "d": "viseme_DD",
       "k": "viseme_kk",
+      "g": "viseme_kk",
       "ch": "viseme_CH",
+      "j": "viseme_CH",
       "s": "viseme_SS",
+      "z": "viseme_SS",
+      "sh": "viseme_SS",
+      "zh": "viseme_SS",
       "n": "viseme_nn",
       "r": "viseme_RR",
+      "l": "viseme_RR",
       "a": "viseme_aa",
+      "aa": "viseme_aa",
       "e": "viseme_E",
+      "ee": "viseme_E",
       "i": "viseme_I",
-      "o": "viseme_O",
+      "oo": "viseme_U",
       "u": "viseme_U",
+      "o": "viseme_O",
       "sil": "viseme_sil"
     };
 
@@ -64,10 +73,14 @@ const Avtar = ({ text, start, end, scale, position }) => {
       return;
     }
 
+    console.log(nodes.Wolf3D_Avatar);
     const setViseme = (viseme) => {
+        console.log(viseme);
       for (let key in visemeMapping) {
+        // headMesh.morphTargetInfluences[visemeMapping[key]] = key === viseme ? 1 : 0;
         headMesh.morphTargetInfluences[visemeMapping[key]] = key === viseme ? 1 : 0;
       }
+      // console.log(`Set viseme: ${viseme}`);  // Print viseme to console
     };
 
     const blinkEyes = async () => {
@@ -81,19 +94,22 @@ const Avtar = ({ text, start, end, scale, position }) => {
     const getPhonemes = (text) => {
       const phonemes = text.split('').map(char => {
         if (char.trim()) {
-          return phonemeToViseme[char.toLowerCase()];
+          return phonemeToViseme[char.toLowerCase()] || "viseme_sil";
         } else {
           return "viseme_sil";
         }
       });
-
       return phonemes;
     };
 
     const animateVisemes = async (phonemes) => {
+
+      const visemeArray = [];  // Array to store visemes
       for (let phoneme of phonemes) {
-        if (!start) break;
+        if (!start || end) break;  // Stop if end is true
         setViseme(phoneme);
+        console.log(phoneme);
+        visemeArray.push(phoneme);  // Add viseme to array
 
         // Randomly trigger an eye blink
         if (Math.random() < 0.1) {  // Adjust the probability as needed
@@ -103,23 +119,25 @@ const Avtar = ({ text, start, end, scale, position }) => {
         await new Promise((resolve) => setTimeout(resolve, 200)); // Adjust the timing as needed
       }
       setViseme("viseme_sil");
+      console.log('animation completed!');
+      console.log('Visemes:', visemeArray);  // Print viseme array to console
+      if (end) {
+        headMesh.morphTargetInfluences.fill(0);
+        setIsAnimating(false);
+        console.log('animation stopped!');
+      }
     };
 
-    if (start && text) {
+    if (start && text && !isAnimating) {
+      console.log(text);
+      setIsAnimating(true);
       const phonemes = getPhonemes(text);
-      animateVisemes(phonemes).then(() => {
-        if (end) {
-          headMesh.morphTargetInfluences.fill(0);
-          setIsAnimating(false);
-      setViseme("viseme_sil");
-
-          console.log('animation completed!');
-        }
-      });
+      console.log(phonemes);
+      animateVisemes(phonemes);
     } else {
       headMesh.morphTargetInfluences.fill(0);
     }
-    
+
   }, [start, text, end, nodes]);
 
   useEffect(() => {
@@ -127,11 +145,14 @@ const Avtar = ({ text, start, end, scale, position }) => {
       const headMesh = nodes.Wolf3D_Avatar;
       headMesh.morphTargetInfluences.fill(0);
       setIsAnimating(false);
+      console.log('animation stopped!');
     }
   }, [end, nodes]);
-
+useEffect(() => {
+  nodes.Wolf3D_Avatar.morphTargetDictionary.mouthOpen = 0
+},[]);
   return (
-    <group ref={group} dispose={null} scale={scale} position={position}>
+    <group ref={group} dispose={null} scale={scale} key={1} position={position}>
       <primitive object={scene} />
     </group>
   );

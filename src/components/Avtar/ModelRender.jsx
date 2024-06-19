@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls } from "@react-three/drei";
 import { Suspense } from "react";
@@ -7,67 +7,52 @@ import Avtar from "./Avtar";
 const ModelRender = () => {
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speak, setspeakcompleted] = useState(false);
+  const [speakCompleted, setSpeakCompleted] = useState(false);
+  const [voices, setVoices] = useState([]);
+
+  useEffect(() => {
+    const handleVoicesChanged = () => {
+      setVoices(window.speechSynthesis.getVoices());
+    };
+
+    window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
+    
+    handleVoicesChanged();
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, [setVoices]);
 
   const handleInputChange = (event) => {
     setInputText(event.target.value);
   };
 
-  // const handleSpeak = () => {
-  //   if (inputText.trim() !== '') {
-  //     const utterance = new SpeechSynthesisUtterance(inputText);
-  //     console.log()
-  //     utterance.onend = () => {
-  //       setIsSpeaking(false);
-  //       console.log("Speech synthesis completed.");
-  //       const synth = window.speechSynthesis.getVoices();
-  //       console.log(synth);
-  //       setspeakcompleted(true);
-  //     };
-  //     setIsSpeaking(true);
-  //     console.log("Starting speech synthesis.");
-  //     window.speechSynthesis.speak(utterance);
-  //   }
-  // };
   const handleSpeak = () => {
     if (inputText.trim() !== '') {
       const utterance = new SpeechSynthesisUtterance(inputText);
-  
-      // Set the onend event handler
+      console.log(utterance);
+
       utterance.onend = () => {
         setIsSpeaking(false);
         console.log("Speech synthesis completed.");
-        // setspeakcompleted(true);
+        setSpeakCompleted(true);
       };
-  
+
       setIsSpeaking(true);
       console.log("Starting speech synthesis.");
-  
-      // Wait for the voices to be loaded before selecting one
-      window.speechSynthesis.onvoiceschanged = () => {
-        // Get the list of available voices
-        const voices = window.speechSynthesis.getVoices();
-  
-        // Find the voice with the name "Google हिन्दी"
-        const hindiVoice = voices.find(voice => voice.name === "Google हिन्दी");
-  
-        if (hindiVoice) {
-          // Set the selected voice
-          utterance.voice = hindiVoice;
-  
-          // Speak the text
-          window.speechSynthesis.speak(utterance);
-          setspeakcompleted(true);
-        } else {
-          console.error("Voice not found: Google हिन्दी");
-  //     window.speechSynthesis.speak(utterance);
 
-        }
-      };
+      const hindiVoice = voices.find(voice => voice.name === "Google हिन्दी");
+
+      if (hindiVoice) {
+        utterance.voice = hindiVoice;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        console.error("Voice not found: Google हिन्दी");
+        window.speechSynthesis.speak(utterance); // Fallback to default voice
+      }
     }
   };
-  
-  
 
   return (
     <div className="flex grid items-center justify-center w-full h-screen grid-cols-1 md:grid-cols-2">
@@ -79,10 +64,12 @@ const ModelRender = () => {
           placeholder="Enter text to speak"
           className="w-full p-2 mb-4 border-2 border-gray-400 rounded"
         />
-        <button onClick={handleSpeak} className="w-full p-2 mb-4 text-white bg-blue-500 rounded">Speak</button>
+        <button onClick={handleSpeak} className="w-full p-2 mb-4 text-white bg-blue-500 rounded" disabled={isSpeaking}>
+          Speak
+        </button>
       </div>
 
-      <div className="flex h-full md:flex-1 ">
+      <div className="flex h-full md:flex-1">
         <Suspense
           fallback={
             <div className="w-full flex items-center justify-center h-full font-bold text-[30px] font-mono text-white">
@@ -103,7 +90,7 @@ const ModelRender = () => {
             <ambientLight intensity={1.5} />
             <Environment preset="sunset" />
             <directionalLight intensity={0.8} />
-            <Avtar start={isSpeaking} text={inputText} end={speak} scale={[2, 2, 2]} position={[0, -1.5, 0]} />
+            <Avtar start={isSpeaking} text={inputText} end={speakCompleted} scale={[2, 2, 2]} position={[0, -1.5, 0]} />
           </Canvas>
         </Suspense>
       </div>
@@ -112,3 +99,5 @@ const ModelRender = () => {
 };
 
 export default ModelRender;
+
+
