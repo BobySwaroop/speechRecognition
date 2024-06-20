@@ -1,6 +1,7 @@
 import React, { Suspense, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
+import Draggable from 'react-draggable';
 
 // Animated model component
 const AnimatedModel = () => {
@@ -52,8 +53,9 @@ const Ai = () => {
   // };
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <Canvas>
+    <div className="flex items-center justify-center h-screen absolute">
+      <Draggable style={{position:'relative'}}  >
+      <Canvas >
         
         <ambientLight intensity={2.0} />
         <spotLight position={[10, 75, 10]} angle={1.15} penumbra={20} />
@@ -64,6 +66,7 @@ const Ai = () => {
         </Suspense>
         <OrbitControls />
       </Canvas>
+      </Draggable>
       {/* <button onClick={handleStart()}>start</button> */}
     </div>
   );

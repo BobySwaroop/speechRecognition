@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
+import { OrbitControls, useGLTF, useFBX, useAnimations } from '@react-three/drei';
+import Draggable from 'react-draggable';
 
 const visemeMap = {
   a: 0,   // Corresponding morph target index for 'a'
@@ -42,18 +43,34 @@ const visemeMap = {
 };
 
 // Animated model component
-const AnimatedModel = ({ viseme }) => {
+const AnimatedModel = ({ viseme, text }) => {
   const { scene } = useGLTF('/indModel.glb');
+  const avatarAnimation = useFBX('/Waving.fbx');
 
   const group = useRef();
-  // const { scene, animations, nodes, materials } = useGLTF(animatedGLB);
-  // const { actions } = useAnimations(animations, group);
+  const { actions } = useAnimations(avatarAnimation.animations, group);
 
+  useEffect(() => {
+    // Check and play the animation
+    const playAnimation = async () => {
+      if(text){
+        console.log('text received');
 
-  // if (start && actions && actions["Armature.001|mixamo.com|Layer0"]) {
-  //   actions["Armature.001|mixamo.com|Layer0"].play();
-  //   console.log('Animation started');
-  // }
+      }
+      else if (!text){
+        console.log('text is not recevied!');
+      }
+      const action = actions[avatarAnimation.animations[0].name];
+      if (action && !text) {
+        action.play();
+        console.log('Playing animation:', avatarAnimation.animations[0].name);
+      } else {
+        console.error('Animation action not found:', avatarAnimation.animations[0].name);
+      }
+    };
+
+    playAnimation();
+  }, [actions, avatarAnimation.animations]);
 
 
 
@@ -142,10 +159,12 @@ const Avatar = ({ text}) => {
 
 
 
+
   return (
-    <div className="flex items-center justify-center h-screen">
-      <Canvas camera={{
-                position: [0, window.innerWidth / window.innerHeight, 2]
+    <div className="flex items-center justify-center h-screen fixed">
+      <Draggable defaultPosition={{x:-220, y:-150}} >
+      <Canvas  camera={{
+                position: [0, window.innerWidth / window.innerHeight, 5]
             }}
         > 
         <ambientLight intensity={2.0} />
@@ -153,10 +172,11 @@ const Avatar = ({ text}) => {
         {/* <spotLight position={[10, 75, 10]} angle={1.15} penumbra={2} /> */}
         <pointLight position={[0, -3, 10]} intensity={2}/>
         <Suspense fallback={null}>
-          <AnimatedModel  viseme={currentViseme} position={[-1.2, 0, 0]} />
+          <AnimatedModel  viseme={currentViseme} text={text}  />
         </Suspense>
-        <OrbitControls /> 
+        {/* <OrbitControls />  */}
       </Canvas>
+      </Draggable>
     </div>
   );
 };
