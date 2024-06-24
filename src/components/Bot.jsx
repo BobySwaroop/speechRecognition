@@ -47,7 +47,7 @@ const Bot = () => {
       },
     },
     {
-      command: ['hello', 'hi', 'how are you', 'hey', 'hello bot', 'hii bot'],
+      command: ['hello', 'hi', 'how are you', 'hey'],
       callback: () => addBotMessage('Hi! How can I assist you?'),
       isFuzzyMatch: true,
       fuzzyMatchingThreshold: 0.4,
@@ -200,12 +200,16 @@ const Bot = () => {
     }
   };
 
+  
+
   const addBotMessage = (message) => {
+    
     // if (submitting) {
       setLoading(true); // Set loading to true when bot is about to respond
       setTimeout(() => {
         setMessages(prev => [...prev, { sender: 'bot', text: message }]);
         // speakMessage(message);
+        console.log(message);
         getbotMsg(message);
         setSubmitting(false);
         setLoading(false); // Set loading to false after bot has responded

@@ -10,70 +10,100 @@ const visemeMap = {
   o: 3,   // Corresponding morph target index for 'o'
   u: 4,   // Corresponding morph target index for 'u'
   b: 5,   // Corresponding morph target index for 'b'
-  A: 6,   // Corresponding morph target index for 'A'
-  E: 7,   // Corresponding morph target index for 'E'
-  O: 8,   // Corresponding morph target index for 'O'
-  ';': 9, // Corresponding morph target index for ';'
-  S: 10,  // Corresponding morph target index for 'S'
-  c: 11,  // Corresponding morph target index for 'c'
-  z: 12,  // Corresponding morph target index for 'z'
-  h: 13,  // Corresponding morph target index for 'h'
-  j: 14,  // Corresponding morph target index for 'j'
-  er: 15, // Corresponding morph target index for 'er'
-  t: 16,  // Corresponding morph target index for 't'
-  d: 17,  // Corresponding morph target index for 'd'
-  y: 18,  // Corresponding morph target index for 'y'
-  ix: 19, // Corresponding morph target index for 'ix'
-  I: 20,  // Corresponding morph target index for 'I'
-  f: 21,  // Corresponding morph target index for 'f'
-  v: 22,  // Corresponding morph target index for 'v'
-  w: 23,  // Corresponding morph target index for 'w'
-  U: 24,  // Corresponding morph target index for 'U'
-  T: 25,  // Corresponding morph target index for 'T'
-  D: 26,  // Corresponding morph target index for 'D'
-  ow: 27, // Corresponding morph target index for 'ow'
-  o: 28,  // Corresponding morph target index for 'o'
-  k: 29,  // Corresponding morph target index for 'k'
-  g: 30,  // Corresponding morph target index for 'g'
-  aw: 31, // Corresponding morph target index for 'aw'
-  n: 32,  // Corresponding morph target index for 'n'
-  oy: 33, // Corresponding morph target index for 'oy'
-  p: 34,  // Corresponding morph target index for 'p'
-  m: 35,  // Corresponding morph target index for 'm'
+  // A: 6,   // Corresponding morph target index for 'A'
+  // E: 7,   // Corresponding morph target index for 'E'
+  // O: 8,   // Corresponding morph target index for 'O'
+  // ';': 9, // Corresponding morph target index for ';'
+  // S: 10,  // Corresponding morph target index for 'S'
+  // c: 11,  // Corresponding morph target index for 'c'
+  // z: 12,  // Corresponding morph target index for 'z'
+  // h: 13,  // Corresponding morph target index for 'h'
+  // j: 14,  // Corresponding morph target index for 'j'
+  // er: 15, // Corresponding morph target index for 'er'
+  // t: 16,  // Corresponding morph target index for 't'
+  // d: 17,  // Corresponding morph target index for 'd'
+  // y: 18,  // Corresponding morph target index for 'y'
+  // ix: 19, // Corresponding morph target index for 'ix'
+  // I: 20,  // Corresponding morph target index for 'I'
+  // f: 21,  // Corresponding morph target index for 'f'
+  // v: 22,  // Corresponding morph target index for 'v'
+  // w: 23,  // Corresponding morph target index for 'w'
+  // U: 24,  // Corresponding morph target index for 'U'
+  // T: 25,  // Corresponding morph target index for 'T'
+  // D: 26,  // Corresponding morph target index for 'D'
+  // ow: 27, // Corresponding morph target index for 'ow'
+  // o: 28,  // Corresponding morph target index for 'o'
+  // k: 29,  // Corresponding morph target index for 'k'
+  // g: 30,  // Corresponding morph target index for 'g'
+  // aw: 31, // Corresponding morph target index for 'aw'
+  // n: 32,  // Corresponding morph target index for 'n'
+  // oy: 33, // Corresponding morph target index for 'oy'
+  // p: 34,  // Corresponding morph target index for 'p'
+  // m: 35,  // Corresponding morph target index for 'm'
 };
 
 // Animated model component
 const AnimatedModel = ({ viseme, text }) => {
   const { scene } = useGLTF('/indModel.glb');
   const avatarAnimation = useFBX('/Waving.fbx');
+  const talkAnimation = useFBX('/StandingArguing2.fbx');
+  const walkAnimation = useFBX('/Walking.fbx');
+
+
+    // Name each animation uniquely
+  avatarAnimation.animations[0].name = "waving";
+  talkAnimation.animations[0].name = "talking";
+  walkAnimation.animations[0].name = "walking";
+
+
+
+ 
+    // Combine all animations
+  const allAnimations = [
+    ...avatarAnimation.animations,
+    ...talkAnimation.animations,
+    ...walkAnimation.animations
+];
 
   const group = useRef();
-  const { actions } = useAnimations(avatarAnimation.animations, group);
+  const { actions } = useAnimations(allAnimations, group);
 
   useEffect(() => {
-    // Check and play the animation
-    const playAnimation = async () => {
-      if(text){
-        console.log('text received');
-
+    // Function to play and stop animations based on 'text'
+    const playOrStopAnimations = () => {
+      if (!actions || !actions["waving"] || !actions["talking"]) {
+        console.error('Animation actions not found');
+        return;
       }
-      else if (!text){
-        console.log('text is not recevied!');
+  
+      if (!text) {
+        // No text, play the animations
+        actions["waving"].play();
+        // actions["talking"].stop();
       }
-      const action = actions[avatarAnimation.animations[0].name];
-      if (action && !text) {
-        action.play();
-        console.log('Playing animation:', avatarAnimation.animations[0].name);
+      else if (text && !actions["talking"].isRunning()) {
+        
+        actions["waving"].stop();
+        // actions["talking"].play();
+        actions["waving"].stop();
+     
       } else {
-        console.error('Animation action not found:', avatarAnimation.animations[0].name);
+        // Text is present, stop animations
+        actions["waving"].stop();
+        actions["talking"].stop();
       }
     };
-
-    playAnimation();
-  }, [actions, avatarAnimation.animations]);
-
-
-
+  
+    // Call the function initially
+    playOrStopAnimations();
+  
+    // Clean-up function to stop animations when component unmounts
+    return () => {
+      if (actions && actions["waving"]) actions["waving"].stop();
+      if (actions && actions["talking"]) actions["talking"].stop();
+    };
+  }, [text, actions]); // Dependency array ensures this effect runs when 'text' or 'actions' change
+  
   useEffect(() => {
     if (group.current) {
       let mesh;
@@ -111,13 +141,14 @@ const AnimatedModel = ({ viseme, text }) => {
 // Avatar component
 const Avatar = ({ text}) => {
 
-  console.log(text);
+ console.log('text', text);
   const [currentViseme, setCurrentViseme] = useState(null);
 
   useEffect(() => {
-    if (!text) return;
-
     const synth = window.speechSynthesis;
+
+    if (!text || synth.speaking) return;
+
     const utterance = new SpeechSynthesisUtterance(text);
     const phonemeTimings = []; // This should come from your phoneme timings service
 
@@ -152,7 +183,14 @@ const Avatar = ({ text}) => {
       setCurrentViseme(null); // Reset viseme when speech ends
     };
 
+   const voices = synth.getVoices();
+    const femaleVoice = voices.find(voice => voice.name === 'Google UK English Male'); // Adjust voice selection based on available voices
+      
+    utterance.voice = femaleVoice;
     synth.speak(utterance);
+    
+ 
+
 
     return () => clearInterval(interval);
   }, [text]);
@@ -161,7 +199,7 @@ const Avatar = ({ text}) => {
 
 
   return (
-    <div className="flex items-center justify-center h-screen fixed">
+    <div className="fixed flex items-center justify-center h-screen">
       <Draggable defaultPosition={{x:-220, y:-150}} >
       <Canvas  camera={{
                 position: [0, window.innerWidth / window.innerHeight, 5]

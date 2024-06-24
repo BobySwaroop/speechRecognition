@@ -16,11 +16,11 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Bot />} />
-          <Route path="/chatbot" element={<Chatbot />} />
+          {/* <Route path="/chatbot" element={<Chatbot />} />
           <Route path="/kit" element={<Chatkit />} />
           <Route path="/avtar" element={<Avatar />} />
           <Route path="/ai" element={<Ai />} />
-          <Route path="/model" element={<ModelRender />} />
+          <Route path="/model" element={<ModelRender />} /> */}
           <Route path="/m" element={<MessageParser />} />
           <Route path="/cc" element={<Config />} />
 
