@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useFBX, useAnimations } from '@react-three/drei';
 import Draggable from 'react-draggable';
+import { SkeletonHelper } from 'three';
 
 const visemeMap = {
   a: 0,   // Corresponding morph target index for 'a'
@@ -10,44 +11,14 @@ const visemeMap = {
   o: 3,   // Corresponding morph target index for 'o'
   u: 4,   // Corresponding morph target index for 'u'
   b: 5,   // Corresponding morph target index for 'b'
-  // A: 6,   // Corresponding morph target index for 'A'
-  // E: 7,   // Corresponding morph target index for 'E'
-  // O: 8,   // Corresponding morph target index for 'O'
-  // ';': 9, // Corresponding morph target index for ';'
-  // S: 10,  // Corresponding morph target index for 'S'
-  // c: 11,  // Corresponding morph target index for 'c'
-  // z: 12,  // Corresponding morph target index for 'z'
-  // h: 13,  // Corresponding morph target index for 'h'
-  // j: 14,  // Corresponding morph target index for 'j'
-  // er: 15, // Corresponding morph target index for 'er'
-  // t: 16,  // Corresponding morph target index for 't'
-  // d: 17,  // Corresponding morph target index for 'd'
-  // y: 18,  // Corresponding morph target index for 'y'
-  // ix: 19, // Corresponding morph target index for 'ix'
-  // I: 20,  // Corresponding morph target index for 'I'
-  // f: 21,  // Corresponding morph target index for 'f'
-  // v: 22,  // Corresponding morph target index for 'v'
-  // w: 23,  // Corresponding morph target index for 'w'
-  // U: 24,  // Corresponding morph target index for 'U'
-  // T: 25,  // Corresponding morph target index for 'T'
-  // D: 26,  // Corresponding morph target index for 'D'
-  // ow: 27, // Corresponding morph target index for 'ow'
-  // o: 28,  // Corresponding morph target index for 'o'
-  // k: 29,  // Corresponding morph target index for 'k'
-  // g: 30,  // Corresponding morph target index for 'g'
-  // aw: 31, // Corresponding morph target index for 'aw'
-  // n: 32,  // Corresponding morph target index for 'n'
-  // oy: 33, // Corresponding morph target index for 'oy'
-  // p: 34,  // Corresponding morph target index for 'p'
-  // m: 35,  // Corresponding morph target index for 'm'
 };
 
 // Animated model component
 const AnimatedModel = ({ viseme, text }) => {
-  const { scene } = useGLTF('/indModel.glb');
+  const { scene } = useGLTF('/new.glb');
   const avatarAnimation = useFBX('/Waving.fbx');
   const talkAnimation = useFBX('/StandingArguing2.fbx');
-  const walkAnimation = useFBX('/Walking.fbx');
+  const walkAnimation = useFBX('/IvPoleWalking.fbx');
 
 
     // Name each animation uniquely
@@ -56,7 +27,8 @@ const AnimatedModel = ({ viseme, text }) => {
   walkAnimation.animations[0].name = "walking";
 
 
-
+  const [bones, setBones] = useState(false);
+  const [data, setData] = useState("");
  
     // Combine all animations
   const allAnimations = [
@@ -67,11 +39,19 @@ const AnimatedModel = ({ viseme, text }) => {
 
   const group = useRef();
   const { actions } = useAnimations(allAnimations, group);
+  const skeletonHelperRef = useRef();
 
+  
+  if(data && bones){
+    // console.log(data);
+  }
+  
   useEffect(() => {
+    // if (!bones) return; // Early return if bones are not available
+  
     // Function to play and stop animations based on 'text'
     const playOrStopAnimations = () => {
-      if (!actions || !actions["waving"] || !actions["talking"]) {
+      if (!actions["walking"] || !actions["waving"] || !actions["talking"]) {
         console.error('Animation actions not found');
         return;
       }
@@ -79,14 +59,9 @@ const AnimatedModel = ({ viseme, text }) => {
       if (!text) {
         // No text, play the animations
         actions["waving"].play();
-        // actions["talking"].stop();
-      }
-      else if (text && !actions["talking"].isRunning()) {
-        
+      } else if (text && !actions["talking"].isRunning()) {
         actions["waving"].stop();
-        // actions["talking"].play();
-        actions["waving"].stop();
-     
+        actions["talking"].play();
       } else {
         // Text is present, stop animations
         actions["waving"].stop();
@@ -102,7 +77,7 @@ const AnimatedModel = ({ viseme, text }) => {
       if (actions && actions["waving"]) actions["waving"].stop();
       if (actions && actions["talking"]) actions["talking"].stop();
     };
-  }, [text, actions]); // Dependency array ensures this effect runs when 'text' or 'actions' change
+  }, [text, actions]);
   
   useEffect(() => {
     if (group.current) {
@@ -126,14 +101,109 @@ const AnimatedModel = ({ viseme, text }) => {
 
     }
   }, [viseme]);
+  useEffect(() => {
+    if (walkAnimation && walkAnimation.animations && walkAnimation.animations.length > 0) {
+      var count = 0;
+      walkAnimation.animations.forEach((animation) => {
+        animation.tracks.forEach((track) => {
+          const trackName = track.name.split('.')[0];
+          console.log(`Bone used in walk animation: ${trackName}`);
+          count++;
+        });
+      });
+      console.log('walkanimation', count);
+    }
+    if (talkAnimation && talkAnimation.animations && talkAnimation.animations.length > 0) {
+      var count = 0;
+      talkAnimation.animations.forEach((animation) => {
+        animation.tracks.forEach((track) => {
+          const trackName = track.name.split('.')[0];
+          console.log(`Bone used in talk animation: ${trackName}`);
+          count++;
+        });
+      });
+      console.log('talkanimation', count);
+
+    }
+    if (group.current && !skeletonHelperRef.current) {
+      skeletonHelperRef.current = new SkeletonHelper(group.current);
+      group.current.add(skeletonHelperRef.current);
+
+      // Log bone names and hierarchy
+      var count = 0;
+      group.current.traverse((child) => {
+        if (child.isBone) {
+          console.log(`Bone: ${child.name}`);
+          count++;
+        }
+      });
+    }
+  console.log(count);
+    return () => {
+      if (group.current && skeletonHelperRef.current) {
+        group.current.remove(skeletonHelperRef.current);
+        skeletonHelperRef.current = null;
+      }
+    };
+  }, [group]);
+  useEffect(() => {
+    if (walkAnimation && group.current) {
+      const updatedBones = new Set();
+      
+      walkAnimation.animations.forEach((animation) => {
+        animation.tracks.forEach((track) => {
+          const trackName = track.name.split('.')[0];
+          
+          group.current.traverse((child) => {
+            if (child.isBone && !updatedBones.has(child) && !updatedBones.has(trackName)) {
+              // Check if the current bone name matches the track name or if it needs to be renamed
+              if (child.name === trackName || !updatedBones.has(child.name)) {
+                child.name = trackName;
+                // console.log(`Synchronized bone name: ${child.name}`);
+                updatedBones.add(trackName);
+                setData(Array.from(updatedBones));
+                setBones(true);
+              }
+            }
+          });
+        });
+      });
+
+      // Print all updated bone names after synchronization
+      // console.log('All synchronized bone names:', Array.from(updatedBones));
+ 
+     
+    }
+  }, [walkAnimation, group]);
+
+  useEffect(() => {
+    if (bones) {
+      if (group.current && !skeletonHelperRef.current) {
+        skeletonHelperRef.current = new SkeletonHelper(group.current);
+        group.current.add(skeletonHelperRef.current);
+
+        // Log bone names and hierarchy after synchronization
+        let count = 0;
+        console.log('Bones after synchronization:');
+        group.current.traverse((child) => {
+          if (child.isBone) {
+            console.log(`updated Bone: ${child.name}`);
+            count++;
+          }
+        });
+        console.log(count);
+      }
+    }
+  }, [bones, group]);
+ 
 
 
   return (
     <group ref={group}  dispose={null}>
       <primitive object={scene} scale={1.5}   />
+
       {/* scale={1.13} */}
        
-     {/*  */}
     </group>
   );
 };
@@ -151,9 +221,6 @@ const Avatar = ({ text}) => {
 
     const utterance = new SpeechSynthesisUtterance(text);
     const phonemeTimings = []; // This should come from your phoneme timings service
-
-    // Placeholder function to simulate phoneme timings for demonstration
-    // You will need to replace this with actual phoneme timings logic
     const simulatePhonemeTimings = () => {
       const phonemes = text.split('');
       phonemes.forEach((phoneme, index) => {
@@ -184,22 +251,17 @@ const Avatar = ({ text}) => {
     };
 
    const voices = synth.getVoices();
-    const femaleVoice = voices.find(voice => voice.name === 'Google UK English Male'); // Adjust voice selection based on available voices
+    const femaleVoice = voices.find(voice => voice.name === 'Google UK English Female'); // Adjust voice selection based on available voices
       
     utterance.voice = femaleVoice;
     synth.speak(utterance);
     
- 
-
-
     return () => clearInterval(interval);
   }, [text]);
 
-
-
-
   return (
     <div className="fixed flex items-center justify-center h-screen">
+
       <Draggable defaultPosition={{x:-220, y:-150}} >
       <Canvas  camera={{
                 position: [0, window.innerWidth / window.innerHeight, 5]
